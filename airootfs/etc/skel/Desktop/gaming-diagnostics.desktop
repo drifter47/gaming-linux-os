@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Gaming Diagnostics
+GenericName=System Check
+Comment=Verify kernel tweaks, Vulkan drivers, and gamepad status
+Exec=konsole -e /usr/local/bin/gaming-system-check
+Icon=utilities-system-monitor
+Terminal=false
+StartupNotify=true
+Categories=System;

@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# GPU Driver Detection & Wayland Synchronization Setup
+# ==============================================================================
+set -e
+
+echo "=== [Gaming OS] Hardware Detection & GPU Initialization ==="
+
+HAS_NVIDIA=$(lspci -nn | grep -iE 'vga|3d' | grep -i '10de' || true)
+HAS_AMD=$(lspci -nn | grep -iE 'vga|3d' | grep -i '1002' || true)
+HAS_INTEL=$(lspci -nn | grep -iE 'vga|3d' | grep -i '8086' || true)
+
+if [ -n "$HAS_NVIDIA" ]; then
+    echo "[✓] NVIDIA Graphics Card Detected."
+    # Ensure nvidia kernel modules are loaded
+    modprobe -q nvidia || true
+    modprobe -q nvidia_modeset || true
+    modprobe -q nvidia_uvm || true
+    modprobe -q nvidia_drm || true
+
+    # Wayland explicit sync environment configuration
+    mkdir -p /etc/environment.d/
+    cat << 'EOF' > /etc/environment.d/10-nvidia-wayland.conf
+LIBVA_DRIVER_NAME=nvidia
+__GLX_VENDOR_LIBRARY_NAME=nvidia
+NVD_BACKEND=direct
+ELECTRON_OZONE_PLATFORM_HINT=auto
+EOF
+fi
+
+if [ -n "$HAS_AMD" ]; then
+    echo "[✓] AMD Radeon GPU Detected (Using RADV Vulkan driver)."
+    modprobe -q amdgpu || true
+    mkdir -p /etc/environment.d/
+    cat << 'EOF' > /etc/environment.d/10-amd-vulkan.conf
+AMD_VULKAN_ICD=RADV
+RADV_PERFTEST=gpl
+EOF
+fi
+
+if [ -n "$HAS_INTEL" ]; then
+    echo "[✓] Intel GPU Detected (Using ANV Vulkan driver)."
+fi
+
+# Multi-GPU Laptop Hybrid Graphics Check
+GPU_COUNT=$(lspci -nn | grep -iE 'vga|3d' | wc -l)
+if [ "$GPU_COUNT" -gt 1 ]; then
+    echo "[✓] Hybrid / Dual-GPU Laptop Detected. Enabling switcheroo-control service."
+    systemctl enable --now switcheroo-control.service 2>/dev/null || true
+fi
+
+echo "=== [Gaming OS] GPU Initialization Complete ==="

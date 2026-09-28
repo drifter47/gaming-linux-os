@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# Gaming OS System Diagnostics & Performance Check
+# ==============================================================================
+
+BOLD="\033[1m"
+GREEN="\033[0;32m"
+YELLOW="\033[0;33m"
+CYAN="\033[0;36m"
+RED="\033[0;31m"
+RESET="\033[0m"
+
+clear
+echo -e "${CYAN}${BOLD}======================================================${RESET}"
+echo -e "${CYAN}${BOLD}       Gaming OS - Hardware & Performance Diagnostics  ${RESET}"
+echo -e "${CYAN}${BOLD}======================================================${RESET}\n"
+
+# 1. Kernel Check
+KERNEL=$(uname -r)
+echo -ne "${BOLD}Kernel: ${RESET}$KERNEL "
+if [[ "$KERNEL" == *"zen"* ]] || [[ "$KERNEL" == *"cachyos"* ]] || [[ "$KERNEL" == *"tkg"* ]]; then
+    echo -e "[${GREEN}✓ GAMING KERNEL ACTIVE${RESET}]"
+else
+    echo -e "[${YELLOW}! STANDARD KERNEL${RESET}]"
+fi
+
+# 2. vm.max_map_count
+MAX_MAP=$(cat /proc/sys/vm/max_map_count 2>/dev/null || echo "0")
+echo -ne "${BOLD}Memory Map Limit (vm.max_map_count): ${RESET}$MAX_MAP "
+if [ "$MAX_MAP" -ge 2147483642 ]; then
+    echo -e "[${GREEN}✓ OPTIMIZED (Star Citizen / UE5 ready)${RESET}]"
+else
+    echo -e "[${RED}✗ DEFAULT LIMIT (May crash in large games)${RESET}]"
+fi
+
+# 3. Split Lock Mitigation
+SPLIT_LOCK=$(cat /proc/sys/kernel/split_lock_mitigate 2>/dev/null || echo "N/A")
+echo -ne "${BOLD}Split-Lock Mitigation: ${RESET}$SPLIT_LOCK "
+if [ "$SPLIT_LOCK" == "0" ]; then
+    echo -e "[${GREEN}✓ DISABLED (No micro-stutters in Proton)${RESET}]"
+else
+    echo -e "[${YELLOW}! DEFAULT${RESET}]"
+fi
+
+# 4. ZRAM Swap
+echo -ne "${BOLD}ZRAM Compressed Swap: ${RESET}"
+if command -v zramctl &>/dev/null && [ -n "$(zramctl --noheadings)" ]; then
+    echo -e "[${GREEN}✓ ACTIVE${RESET}]"
+    zramctl
+else
+    echo -e "[${YELLOW}! INACTIVE${RESET}]"
+fi
+
+# 5. GameMode Daemon
+echo -ne "\n${BOLD}Feral GameMode Daemon: ${RESET}"
+if command -v gamemoded &>/dev/null; then
+    echo -e "[${GREEN}✓ INSTALLED & READY${RESET}]"
+else
+    echo -e "[${RED}✗ NOT FOUND${RESET}]"
+fi
+
+# 6. Vulkan Accelerators
+echo -e "\n${BOLD}Vulkan Devices Detected:${RESET}"
+if command -v vulkaninfo &>/dev/null; then
+    vulkaninfo --summary 2>/dev/null | grep -E 'deviceName|driverName' || echo "  No Vulkan ICD reporting"
+else
+    lspci | grep -iE 'vga|3d'
+fi
+
+# 7. Connected Gamepads
+echo -e "\n${BOLD}Connected Controllers:${RESET}"
+CONTROLLERS=$(cat /proc/bus/input/devices 2>/dev/null | grep -E 'Handlers=.*js[0-9]+' || true)
+if [ -n "$CONTROLLERS" ]; then
+    echo -e "${GREEN}$CONTROLLERS${RESET}"
+else
+    echo -e "  ${YELLOW}No gamepad detected. Connect via USB or Bluetooth.${RESET}"
+fi
+
+echo -e "\n${CYAN}======================================================${RESET}"

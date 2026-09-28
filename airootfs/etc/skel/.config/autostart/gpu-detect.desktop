@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=GPU Setup
+Comment=Initializes GPU drivers and Wayland explicit sync
+Exec=/usr/local/bin/gpu-driver-detect
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Install Gaming OS
+GenericName=System Installer
+Comment=Install Gaming OS permanently to your disk or SSD
+Exec=/usr/local/bin/launch-installer
+Icon=calamares
+Terminal=false
+StartupNotify=true
+Categories=System;

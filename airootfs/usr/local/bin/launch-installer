@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# Calamares GUI Installer Launcher
+# ==============================================================================
+
+if [ "$EUID" -ne 0 ]; then
+    exec pkexec /usr/bin/calamares -d
+else
+    exec /usr/bin/calamares -d
+fi
